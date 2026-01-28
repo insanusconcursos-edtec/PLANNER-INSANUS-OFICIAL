@@ -3,11 +3,20 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Flashcard, MindMapNode } from "../types";
 import { uuid } from "../constants";
 
-// Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper para inicializar o cliente apenas quando necessário
+const getAIClient = () => {
+  // Garante que a chave existe ou usa string vazia para evitar crash imediato
+  const apiKey = process.env.API_KEY || ""; 
+  if (!apiKey) {
+    console.warn("API Key do Google Gemini não encontrada. Verifique as variáveis de ambiente.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 export const generateFlashcardsFromPDF = async (base64Pdf: string): Promise<Flashcard[]> => {
   try {
+    const ai = getAIClient();
+    
     // Regex robusto para remover qualquer header data: (application/pdf, octet-stream, etc)
     const cleanBase64 = base64Pdf.replace(/^data:.*?;base64,/, "");
 
@@ -82,6 +91,7 @@ export const generateFlashcardsFromPDF = async (base64Pdf: string): Promise<Flas
 // NEW: Generate Mind Map from multiple PDFs
 export const generateMindMapFromFiles = async (files: { base64: string, mimeType: string }[]): Promise<MindMapNode> => {
     try {
+        const ai = getAIClient();
         const modelName = "gemini-3-flash-preview";
         
         const parts = files.map(f => ({

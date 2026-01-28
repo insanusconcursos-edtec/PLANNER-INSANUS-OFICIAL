@@ -4,7 +4,6 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Carrega variáveis de ambiente baseadas no modo (ex: .env, .env.production)
-  // O terceiro parâmetro '' permite carregar variáveis sem o prefixo VITE_ (como API_KEY)
   const env = loadEnv(mode, '.', '');
 
   return {
@@ -14,8 +13,14 @@ export default defineConfig(({ mode }) => {
       sourcemap: false
     },
     define: {
-      // Isso injeta o valor da API_KEY durante o build para que o navegador consiga ler process.env.API_KEY
-      'process.env.API_KEY': JSON.stringify(env.API_KEY)
+      // Define process.env globalmente para evitar "ReferenceError: process is not defined"
+      // Também garante que API_KEY seja uma string, mesmo que vazia, para evitar crash no new GoogleGenAI
+      'process.env': {
+        NODE_ENV: JSON.stringify(mode),
+        API_KEY: JSON.stringify(env.API_KEY || "") 
+      },
+      // Fallback específico para acessos diretos process.env.API_KEY
+      'process.env.API_KEY': JSON.stringify(env.API_KEY || "")
     }
   }
 })
